@@ -1,0 +1,96 @@
+\<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cut OUT Pro AI</title>
+
+<style>
+body{
+font-family:Arial,sans-serif;
+text-align:center;
+padding:30px;
+background:#f5f7fa;
+}
+
+button{
+padding:12px 20px;
+cursor:pointer;
+margin-top:15px;
+}
+
+img{
+max-width:300px;
+margin-top:20px;
+}
+</style>
+</head>
+<body>
+
+<h1>Cut OUT Pro AI</h1>
+
+<input type="file" id="imageInput">
+
+<br>
+
+<button onclick="removeBg()">
+Remove Background
+</button>
+
+<div id="result"></div>
+
+<script>
+
+async function removeBg(){
+
+const file =
+document.getElementById("imageInput").files[0];
+
+if(!file){
+alert("Select an image first");
+return;
+}
+
+const formData = new FormData();
+formData.append("image_file", file);
+
+const response = await fetch(
+"https://api.remove.bg/v1.0/removebg",
+{
+method:"POST",
+headers:{
+"X-Api-Key":"6VJkZFxTf12e835XJfZeZZgt"
+},
+body:formData
+});
+
+if(response.ok){
+
+const blob = await response.blob();
+
+const url =
+URL.createObjectURL(blob);
+
+document.getElementById("result")
+.innerHTML =
+`
+<h3>Background Removed</h3>
+<img src="${url}">
+<br><br>
+<a href="${url}" download="cutout.png">
+Download Image
+</a>
+`;
+
+}else{
+
+alert("Error removing background");
+
+}
+
+}
+
+</script>
+
+</body>
+</html>
