@@ -81,6 +81,9 @@ def remove_background():
         # Read file content
         file_content = file.read()
         
+        print(f"Processing image: {file.filename} (Size: {file_size} bytes)")
+        print(f"API Key configured: {bool(REMOVE_BG_API_KEY)}")
+        
         # Call remove.bg API
         headers = {
             'X-Api-Key': REMOVE_BG_API_KEY
@@ -90,35 +93,64 @@ def remove_background():
             'image_file': (file.filename, file_content, file.content_type)
         }
         
+        print("Sending request to remove.bg API...")
         response = requests.post(
             'https://api.remove.bg/v1.0/removebg',
             headers=headers,
-            files=files
+            files=files,
+            timeout=30
         )
+        
+        print(f"API Response Status: {response.status_code}")
         
         # Handle API response
         if response.status_code == 200:
+            print("✅ Background removal successful!")
             return send_file(
                 io.BytesIO(response.content),
                 mimetype='image/png',
-                as_attachment=True,
-                download_name='cutout.png'
+                as_attachment=False
             )
         else:
-            error_message = response.json().get('errors', [{}])[0].get('title', 'Unknown error')
+            error_details = response.text
+            print(f"❌ API Error: {error_details}")
+            try:
+                error_data = response.json()
+                error_message = error_data.get('errors', [{}])[0].get('title', 'Unknown error')
+            except:
+                error_message = error_details[:200]
+            
             return jsonify({
                 'success': False,
                 'error': f'Remove.bg API error: {error_message}',
                 'status_code': response.status_code
             }), response.status_code
     
+    except requests.exceptions.Timeout:
+        print("❌ API request timeout")
+        return jsonify({
+            'success': False,
+            'error': 'API request timeout. Please try again.'
+        }), 500
+    
+    except requests.exceptions.ConnectionError as e:
+        print(f"❌ Connection error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Network error: Cannot connect to remove.bg API. Check your internet connection.'
+        }), 500
+    
     except requests.exceptions.RequestException as e:
+        print(f"❌ Request error: {str(e)}")
         return jsonify({
             'success': False,
             'error': f'Network error: {str(e)}'
         }), 500
     
     except Exception as e:
+        print(f"❌ Server error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'success': False,
             'error': f'Server error: {str(e)}'
@@ -134,4 +166,7 @@ def health_check():
     }), 200
 
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0', port=5000)
+    print("🚀 Cut OUT Pro API starting...")
+    print(f"✅ API Key configured: {bool(REMOVE_BG_API_KEY)}")
+    print("📍 Running on http://0.0.0.0:5000")
+    app.run(debug=True, host='0.0.0.0', port=5000)

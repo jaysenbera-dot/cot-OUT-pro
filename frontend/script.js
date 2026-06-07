@@ -1,5 +1,5 @@
 // Configuration
-const API_BASE_URL = process.env.API_URL || 'http://localhost:5000';
+const API_BASE_URL = 'http://localhost:5000';
 const ALLOWED_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -114,34 +114,48 @@ async function removeBg() {
     removeBgBtn.disabled = true;
     
     try {
+        console.log('Starting background removal for:', file.name);
+        
         // Prepare form data
         const formData = new FormData();
         formData.append('image_file', file);
         
         // Send request to backend
+        console.log('Sending request to:', `${API_BASE_URL}/api/remove-background`);
         const response = await fetch(`${API_BASE_URL}/api/remove-background`, {
             method: 'POST',
             body: formData
         });
         
+        console.log('Response status:', response.status);
+        
         // Hide loading spinner
         loadingSpinner.classList.add('hidden');
         
         if (response.ok) {
+            console.log('✅ Successfully received image from backend');
             // Get blob from response
             const blob = await response.blob();
+            console.log('Blob size:', blob.size, 'Type:', blob.type);
             const url = URL.createObjectURL(blob);
             
             // Display result
             displayResult(url);
         } else {
             // Handle error response
-            const errorData = await response.json();
-            showError(errorData.error || 'Failed to remove background. Please try again.');
+            console.error('API returned error status:', response.status);
+            try {
+                const errorData = await response.json();
+                console.error('Error details:', errorData);
+                showError(errorData.error || 'Failed to remove background. Please try again.');
+            } catch {
+                showError(`Server error (${response.status}). Check backend console for details.`);
+            }
         }
     } catch (error) {
         loadingSpinner.classList.add('hidden');
-        showError(`Error: ${error.message}. Make sure the backend server is running.`);
+        console.error('Fetch error:', error);
+        showError(`Error: ${error.message}\n\nMake sure:\n1. Backend server is running on http://localhost:5000\n2. Your remove.bg API key is valid\n3. You have internet connection`);
     } finally {
         removeBgBtn.disabled = false;
     }
@@ -153,7 +167,7 @@ async function removeBg() {
 function displayResult(imageUrl) {
     resultDiv.innerHTML = `
         <h3>✨ Background Removed Successfully!</h3>
-        <img src="${imageUrl}" alt="Result">
+        <img src="${imageUrl}" alt="Result" style="border-radius: 8px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);">
         <div class="download-buttons">
             <a href="${imageUrl}" download="cutout.png" class="btn btn-primary">⬇️ Download PNG</a>
             <button onclick="copyImageUrl('${imageUrl}')" class="btn btn-secondary">📋 Copy Image</button>
@@ -174,6 +188,7 @@ async function copyImageUrl(imageUrl) {
         ]);
         showSuccess('Image copied to clipboard!');
     } catch (error) {
+        console.error('Clipboard error:', error);
         showError('Failed to copy image to clipboard');
     }
 }
@@ -192,7 +207,7 @@ function resetForm() {
  * Show error message
  */
 function showError(message) {
-    resultDiv.innerHTML = `<div class="error">❌ ${message}</div>`;
+    resultDiv.innerHTML = `<div class="error" style="white-space: pre-wrap;">❌ ${message}</div>`;
 }
 
 /**
@@ -215,11 +230,17 @@ function showSuccess(message) {
  */
 window.addEventListener('load', async () => {
     try {
+        console.log('Checking backend connectivity...');
         const response = await fetch(`${API_BASE_URL}/api/health`);
         if (response.ok) {
-            console.log('Backend is connected');
+            const data = await response.json();
+            console.log('✅ Backend is connected', data);
+            if (!data.api_key_configured) {
+                showError('⚠️ WARNING: API key not configured! Set REMOVE_BG_API_KEY in backend/.env');
+            }
         }
     } catch (error) {
-        console.warn('Backend server is not accessible:', error.message);
+        console.error('❌ Backend connection failed:', error);
+        showError('⚠️ Backend server is not running on http://localhost:5000. Please start it with: cd backend && python app.py');
     }
 });
