@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cut OUT Pro AI - Professional Background Removal</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✂️ Cut OUT Pro AI</h1>
+            <p class="subtitle">Professional AI-Powered Background Removal</p>
+        </div>
+
+        <div class="upload-section">
+            <div class="file-input-wrapper">
+                <label for="imageInput" class="file-label">
+                    <div class="upload-icon">📤</div>
+                    <p>Click to select an image or drag & drop</p>
+                    <span class="file-hint">PNG, JPG, GIF, WebP (Max 10MB)</span>
+                </label>
+                <input type="file" id="imageInput" accept="image/*" class="file-input">
+            </div>
+
+            <div id="imagePreview" class="image-preview-section hidden">
+                <h3>Original Image</h3>
+                <img id="previewImage" src="" alt="Preview">
+            </div>
+        </div>
+
+        <div class="button-section">
+            <button id="removeBgBtn" onclick="removeBg()" class="btn btn-primary" disabled>
+                🎯 Remove Background
+            </button>
+        </div>
+
+        <div id="result" class="result-section"></div>
+
+        <div id="loadingSpinner" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Processing your image...</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
